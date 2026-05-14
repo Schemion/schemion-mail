@@ -2,7 +2,10 @@ import re
 from email import policy
 from email.message import EmailMessage, Message
 from email.parser import BytesParser
+from email.utils import formatdate, make_msgid, parseaddr
 from html import escape
+
+from src.core.config import settings
 
 
 CODE_PATTERN = re.compile(r"\b\d{4,8}\b")
@@ -29,6 +32,19 @@ def _extract_code(text: str) -> str:
     return "------"
 
 
+def _message_id_domain(source: Message) -> str | None:
+    for header in ("From", "Reply-To"):
+        _, address = parseaddr(source.get(header, ""))
+        if "@" not in address:
+            continue
+
+        domain = address.rsplit("@", 1)[1].strip().lower()
+        if domain:
+            return domain
+
+    return settings.smtp_hostname or None
+
+
 def build_confirmation_card_message(raw_message: bytes) -> bytes:
     source = BytesParser(policy=policy.default).parsebytes(raw_message)
     text_content = _get_text_content(source)
@@ -41,6 +57,8 @@ def build_confirmation_card_message(raw_message: bytes) -> bytes:
             message[header] = value
 
     message["Subject"] = source.get("Subject", "Registration confirmation")
+    message["Date"] = source.get("Date", formatdate(localtime=False, usegmt=True))
+    message["Message-ID"] = source.get("Message-ID", make_msgid(domain=_message_id_domain(source)))
 
     message.set_content(
         f"""Your confirmation code is {code}.
