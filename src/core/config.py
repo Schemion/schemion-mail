@@ -22,7 +22,7 @@ def get_str(name: str, default: str) -> str:
 
 @dataclass(frozen=True)
 class Settings:
-    database_url: str = get_str("DATABASE_URL", "postgresql+psycopg://admin:admin@localhost:5432/schemion")
+    database_url: str = get_str("DATABASE_URL", "postgresql+psycopg://admin:admin@database:5432/schemion")
     smtp_hostname: str = get_str("SMTP_HOSTNAME", "schemion-mail.local")
     smtp_bind_host: str = get_str("SMTP_BIND_HOST", "0.0.0.0")
     smtp_bind_port: int = get_int("SMTP_BIND_PORT", 1025)
